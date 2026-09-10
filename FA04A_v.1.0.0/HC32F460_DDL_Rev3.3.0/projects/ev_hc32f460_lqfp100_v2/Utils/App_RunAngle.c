@@ -8,6 +8,7 @@
 
 #include "App_RunAngle.h"
 #include "App_Params.h"         /* g_s32HallPulseAccum, g_AppParam */
+#include "App_Modbus.h"         /* Modbus_SaveParams() */
 #include "param_manager.h"
 #include "EventBus.h"           /* TOPIC_MANUAL_RS485 */
 #include "dev_motor.h"          /* MotorManualIOEvent_t, CMD_TYPE_*, DIR_* */
@@ -335,6 +336,14 @@ void RunAngle_OnCalibration(void)
     g_AbsAngle.abs_offset_x10 = ref;
     Param_Save(&s_Config, &s_Runtime);    /* persist to Flash sector 55 */
 
+    /* 首次校准完成: 清首次校准开关(0x3716)并保存到 Flash 62-56 */
+    if (g_AppParam.first_calib_en != 0) {
+        g_AppParam.first_calib_en = 0;
+        if (Modbus_SaveParams()) {
+            MAIN_D("[ABSA] First-calib switch cleared (0x3716=0), saved to Flash\r\n");
+        }
+    }
+
     MAIN_D("[ABSA] Calibration: RAM=%ld, Flash=%ld (0x271C=%ld)\r\n",
            (long)ref, (long)ref, (long)g_AppParam.close_limit_angle);
 }
@@ -344,6 +353,13 @@ void RunAngle_OnCalibration(void)
  *  @retval false  angle out of range, caller should set fault */
 bool RunAngle_TryCalibrate(void)
 {
+    /* 首次校准开关(0x3716)=1: 跳过角度区间检测，直接认定有效 */
+    if (g_AppParam.first_calib_en != 0) {
+        MAIN_D("[ABSA] TryCalibrate: first-calib switch ON, bypass range check (angle=%ld)\r\n",
+               (long)s_abs_offset_x10);
+        return true;
+    }
+
     int32_t lower = (int32_t)g_AppParam.calib_lower_x10;
     int32_t upper = (int32_t)g_AppParam.calib_upper_x10;
 

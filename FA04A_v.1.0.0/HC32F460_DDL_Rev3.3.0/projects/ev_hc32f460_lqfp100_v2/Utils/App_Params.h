@@ -44,6 +44,7 @@
 #define REG_MOTOR_HALL_POLE_PAIRS   (0x3713U)   /* 电机极对数 (uint16_t) */
 #define REG_MOTOR_HALL_COUNT_LO     (0x3714U)   /* 霍尔脉冲累计低16位 (int32_t 累计值) */
 #define REG_MOTOR_HALL_COUNT_HI     (0x3715U)   /* 霍尔脉冲累计高16位 */
+#define REG_FIRST_CALIB_EN          (0x3716U)   /* 首次校准开关: 0=常规角度区间检测, 1=首次关窗过流免检测直接校准 (uint16_t) */
 
 /* --- 绝对角度相关 (0x2721~0x2726) --- */
 #define REG_ABS_ANGLE_LO            (0x2721U)   /* RAM实时偏移低16位 (int32_t, 0.1度) */
@@ -140,6 +141,10 @@
 #define PARAM_DEFAULT_OVERCURRENT_TRIGGER_CNT   (1U)        /* 过流触发计数 (时间窗口模式可选择使用) */
 #define PARAM_DEFAULT_CALIB_UPPER_X10           (10)       /* 关窗过流校准有效角度上限 (0.1度) */
 #define PARAM_DEFAULT_CALIB_LOWER_X10           (-50)       /* 关窗过流校准有效角度下限 (0.1度) */
+/* 首次校准开关(0x3716)烧录默认值:
+ * 1 = 烧录后首次关窗过流免角度检测直接校准，校准完成后自动清0并存Flash(掉电保持)
+ * 0 = 烧录后始终执行常规角度区间检测 */
+#define PARAM_DEFAULT_FIRST_CALIB_EN            (1U)
 
 /*=============================================================================
  * 调试开关宏定义 (不存 Flash，通过宏定义开关)
@@ -194,6 +199,7 @@ typedef struct {
     uint16_t  motor_hall_pole_pairs;          /* 0x3713: 电机极对数 */
     int16_t   calib_upper_x10;                /* 0x2729: 关窗过流校准有效角度上限 (0.1度) */
     int16_t   calib_lower_x10;                /* 0x272A: 关窗过流校准有效角度下限 (0.1度) */
+    uint16_t  first_calib_en;                 /* 0x3716: 首次校准开关 0=常规检测 1=首次免检测校准(校准后自动清0) */
 
     /* 尾部信息 */
     uint32_t checksum;              /* CRC32校验和 */
